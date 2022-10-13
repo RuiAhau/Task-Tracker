@@ -8,6 +8,9 @@ const projectRouter = express.Router();
 
 projectRouter.use(bodyParser.json());
 
+/**
+* ALL PROJECTS ROUTER
+*/
 projectRouter.route('/')
     .get((req, res, next) => {
         Projects.find({})
@@ -42,6 +45,9 @@ projectRouter.route('/')
             .catch((err) => next(err));
     });
 
+/**
+* PROJECT ROUTER
+*/
 projectRouter.route('/:projectId')
     .get((req, res, next) => {
         Projects.findById(req.params.projectId)
@@ -70,6 +76,45 @@ projectRouter.route('/:projectId')
             .catch((err) => next(err));
     });
 
+/**
+* PROJECT -- DEVS ROUTER
+*/
+projectRouter.route('/:projectId/devs')
+    .get((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project.devs);
+            })
+    })
+    .post((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                project.devs.push(req.body);
+                project.save()
+                    .then((project) => {
+                        Projects.findById(project._id)
+                            .then((project) => {
+                                res.statusCode = 200;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.json(project);
+                            })
+                    }, (err) => next(err));
+            })
+    })
+    .put((req, res, next) => {
+        res.statusCode = 403;
+        res.end('PUT not supported by /:projectId/devs');
+    })
+    .delete((req, res, next) => {
+        res.statusCode = 403;
+        res.end('DELETE not supported by /:projectId/devs');
+    });
+
+/** 
+* PROJECT -- ALL TASKS ROUTER
+*/
 projectRouter.route('/:projectId/tasks')
     .get((req, res, next) => {
         Projects.findById(req.params.projectId)
@@ -103,7 +148,9 @@ projectRouter.route('/:projectId/tasks')
         res.end('DELETE not supported by /:projectId/tasks');
     });
 
-
+/**
+ * PROJECT -- TASK.ID ROUTER
+ */
 projectRouter.route('/:projectId/tasks/:taskId')
     .get((req, res, next) => {
         Projects.findById(req.params.projectId)
@@ -111,6 +158,39 @@ projectRouter.route('/:projectId/tasks/:taskId')
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json')
                 res.json(project.tasks.id(req.params.taskId))
+            })
+    })
+    .post((req, res, next) => {
+        res.statusCode = 403;
+        res.end('POST not supported by /:projectId/tasks/:taskId');
+    })
+    .put((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                if (req.body.status) {
+                    project.tasks.id(req.params.taskId).status = req.body.status
+                }
+                project.save()
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project);
+            })
+    })
+    .delete((req, res, next) => {
+        res.statusCode = 403;
+        res.end('DELETE not supported by /:projectId/tasks/:taskId');
+    });
+
+/**
+ * PROJECT -- TASK.ID -- ALL DEVS
+ */
+projectRouter.route('/:projectId/tasks/:taskId/dev')
+    .get((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project.tasks.id(req.params.taskId).dev)
             })
     })
     .post((req, res, next) => {
@@ -128,37 +208,86 @@ projectRouter.route('/:projectId/tasks/:taskId')
                     }, (err) => next(err));
             })
     })
+    .put((req, res, next) => {
+        res.statusCode = 403;
+        res.end('PUT not supported by /:projectId/tasks/:taskId/dev');
+    })
+    .delete((req, res, next) => {
+        res.statusCode = 403;
+        res.end('DELETE not supported by /:projectId/tasks/:taskId/dev');
+    });
 
-// TODO PUT AND DELETE
-
-
-projectRouter.route('/:projectId/devs')
+/**
+ * PROJECT -- TASK.ID -- ALL COMMENTS
+ */
+projectRouter.route('/:projectId/tasks/:taskId/comments')
     .get((req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json(project.devs);
+                res.json(project.tasks.id(req.params.taskId).comments)
             })
     })
     .post((req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
-                project.devs.push(req.body);
+                project.tasks.id(req.params.taskId).comments.push(req.body);
                 project.save()
                     .then((project) => {
-                        Projects.findById(project._id)
-                            .then((project) => {
-                                res.statusCode = 200;
-                                res.setHeader('Content-Type', 'application/json');
-                                res.json(project);
-                            })
-                    }, (err) => next(err));
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(project);
+                    })
             })
     })
+    .put((req, res, next) => {
+        res.statusCode = 403;
+        res.end('PUT not supported by /:projectId/tasks/:taskId/comments');
+    })
+    .delete((req, res, next) => {
+        res.statusCode = 403;
+        res.end('DELETE not supported by /:projectId/tasks/:taskId/comments');
+    });
 
-// TODO PUT AND DELETE
-
-
+/**
+ * PROJECT -- TASK.ID -- COMMENT.ID
+ */
+projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
+    .get((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project.tasks.id(req.params.taskId).comments.id(req.params.commentId));
+            })
+    })
+    .post((req, res, next) => {
+        res.statusCode = 403;
+        res.end('POST not supported by /:projectId/tasks/:taskId/comments/:commentId');
+    })
+    .put((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                if (req.body.comment) {
+                    project.tasks.id(req.params.taskId).
+                        comments.id(req.params.commentId).comment = req.body.comment;
+                }
+                project.save()
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project);
+            })
+    })
+    .delete((req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                project.tasks.id(req.params.taskId).comments.id(req.params.commentId).remove()
+                project.save()
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project);
+            })
+    })
 
 module.exports = projectRouter;
