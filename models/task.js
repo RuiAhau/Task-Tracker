@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const usersSchema = require('./user');
+const status = require('../enumStatus');
 
 const commentSchema = new Schema({
     comment: {
@@ -21,7 +22,8 @@ const commentSchema = new Schema({
 const taskSchema = new Schema({
     status: {
         type: String,
-        default: 'implementation',
+        enum: ['waiting', 'implementation', 'verifying', 'releasing'],
+        default: 'waiting',
         required: true
     },
     dev: {

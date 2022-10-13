@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+//const roles = require('../enumRoles');
+
 var User = new Schema({
     firstname: {
         type: String,
@@ -12,8 +14,10 @@ var User = new Schema({
     },
     role: {
         type: String,
+        enum: ['manager', 'developer'],
         default: 'developer',
         required: true
+
     }
 });
 
