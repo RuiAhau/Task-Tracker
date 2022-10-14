@@ -11,8 +11,8 @@ var jwt = require('jsonwebtoken');
 
 var router = express.Router();
 /* GET users listing. */
-router.get('/', function (req, res, next) {
-  if (req.body.firstname || req.body.lastname) {
+router.get('/', authenticate.verifyUser, authenticate.verifyManager, function (req, res, next) {
+  if (req.body.firstname && req.body.lastname) {
     User.find({ firstname: req.body.firstname, lastname: req.body.lastname, role: "developer" }).
       then((user) => {
         res.statusCode = 200;

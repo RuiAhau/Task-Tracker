@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const authenticate = require('../authenticate');
 
 const Projects = require('../models/project');
-const User = require('../models/user');
 
 const projectRouter = express.Router();
 
@@ -16,6 +15,7 @@ projectRouter.use(bodyParser.json());
 projectRouter.route('/')
     .get(authenticate.verifyUser, (req, res, next) => {
         Projects.find({})
+            .populate('creator')
             .then((project) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
@@ -24,8 +24,10 @@ projectRouter.route('/')
             .catch((err) => next(err));
     })
     .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
+        req.body.creator = req.user._id;
         Projects.create(req.body)
             .then((project) => {
+                console.log(req.body.creator)
                 console.log('Project Created ', project);
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
@@ -156,6 +158,7 @@ projectRouter.route('/:projectId/tasks')
 projectRouter.route('/:projectId/tasks/:taskId')
     .get(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
+            .populate('tasks.comments.author')
             .then((project) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json')
@@ -225,6 +228,7 @@ projectRouter.route('/:projectId/tasks/:taskId/dev')
 projectRouter.route('/:projectId/tasks/:taskId/comments')
     .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
+            .populate('tasks.comments.author')
             .then((project) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
@@ -234,6 +238,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
     .post(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
+                req.body.author = req.user._id;
                 project.tasks.id(req.params.taskId).comments.push(req.body);
                 project.save()
                     .then((project) => {
@@ -258,6 +263,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
 projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
     .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
+            .populate('tasks.comments.author')
             .then((project) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');

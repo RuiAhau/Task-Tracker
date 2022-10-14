@@ -9,12 +9,8 @@ const commentSchema = new Schema({
         default: ''
     },
     author: {
-        type: String,
-        default: ''
-        /*
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-        */
     }
 });
 

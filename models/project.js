@@ -6,7 +6,8 @@ const taskSchema = require('./task');
 
 const projectSchema = new Schema({
     creator: {
-        type: [usersSchema.schema]
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
     devs: {
         type: [usersSchema.schema]
