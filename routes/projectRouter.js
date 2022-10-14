@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const authenticate = require('../authenticate');
+
 const Projects = require('../models/project');
 const User = require('../models/user');
 
@@ -12,7 +14,7 @@ projectRouter.use(bodyParser.json());
 * ALL PROJECTS ROUTER
 */
 projectRouter.route('/')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.find({})
             .then((project) => {
                 res.statusCode = 200;
@@ -21,7 +23,7 @@ projectRouter.route('/')
             }, (err) => next(err))
             .catch((err) => next(err));
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser, (req, res, next) => {
         Projects.create(req.body)
             .then((project) => {
                 console.log('Project Created ', project);
@@ -35,7 +37,7 @@ projectRouter.route('/')
         res.statusCode = 403;
         res.end('PUT operation not supported on /projects');
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser, (req, res, next) => {
         Projects.remove({})
             .then((resp) => {
                 res.statusCode = 200;
@@ -49,7 +51,7 @@ projectRouter.route('/')
 * PROJECT ROUTER
 */
 projectRouter.route('/:projectId')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -66,7 +68,7 @@ projectRouter.route('/:projectId')
         res.statusCode = 403;
         res.end('PUT not supported by /:projectId');
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser, (req, res, next) => {
         Projects.findByIdAndRemove(req.params.projectId)
             .then((resp) => {
                 res.statusCode = 200;
@@ -80,7 +82,7 @@ projectRouter.route('/:projectId')
 * PROJECT -- DEVS ROUTER
 */
 projectRouter.route('/:projectId/devs')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -88,7 +90,7 @@ projectRouter.route('/:projectId/devs')
                 res.json(project.devs);
             })
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.devs.push(req.body);
@@ -116,7 +118,7 @@ projectRouter.route('/:projectId/devs')
 * PROJECT -- ALL TASKS ROUTER
 */
 projectRouter.route('/:projectId/tasks')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -124,7 +126,7 @@ projectRouter.route('/:projectId/tasks')
                 res.json(project.tasks);
             })
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.push(req.body);
@@ -152,7 +154,7 @@ projectRouter.route('/:projectId/tasks')
  * PROJECT -- TASK.ID ROUTER
  */
 projectRouter.route('/:projectId/tasks/:taskId')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -164,7 +166,7 @@ projectRouter.route('/:projectId/tasks/:taskId')
         res.statusCode = 403;
         res.end('POST not supported by /:projectId/tasks/:taskId');
     })
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 if (req.body.status) {
@@ -185,7 +187,7 @@ projectRouter.route('/:projectId/tasks/:taskId')
  * PROJECT -- TASK.ID -- ALL DEVS
  */
 projectRouter.route('/:projectId/tasks/:taskId/dev')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -193,7 +195,7 @@ projectRouter.route('/:projectId/tasks/:taskId/dev')
                 res.json(project.tasks.id(req.params.taskId).dev)
             })
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).dev.push(req.body);
@@ -221,7 +223,7 @@ projectRouter.route('/:projectId/tasks/:taskId/dev')
  * PROJECT -- TASK.ID -- ALL COMMENTS
  */
 projectRouter.route('/:projectId/tasks/:taskId/comments')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -229,7 +231,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
                 res.json(project.tasks.id(req.params.taskId).comments)
             })
     })
-    .post((req, res, next) => {
+    .post(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).comments.push(req.body);
@@ -254,7 +256,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
  * PROJECT -- TASK.ID -- COMMENT.ID
  */
 projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
-    .get((req, res, next) => {
+    .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -266,7 +268,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
         res.statusCode = 403;
         res.end('POST not supported by /:projectId/tasks/:taskId/comments/:commentId');
     })
-    .put((req, res, next) => {
+    .put(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 if (req.body.comment) {
@@ -279,7 +281,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
                 res.json(project);
             })
     })
-    .delete((req, res, next) => {
+    .delete(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).comments.id(req.params.commentId).remove()
