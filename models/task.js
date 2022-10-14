@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const usersSchema = require('./user');
-const status = require('../enumStatus');
 
 const commentSchema = new Schema({
     comment: {
