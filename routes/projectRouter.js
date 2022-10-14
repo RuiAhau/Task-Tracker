@@ -23,7 +23,7 @@ projectRouter.route('/')
             }, (err) => next(err))
             .catch((err) => next(err));
     })
-    .post(authenticate.verifyUser, (req, res, next) => {
+    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.create(req.body)
             .then((project) => {
                 console.log('Project Created ', project);
@@ -90,7 +90,7 @@ projectRouter.route('/:projectId/devs')
                 res.json(project.devs);
             })
     })
-    .post(authenticate.verifyUser, (req, res, next) => {
+    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.devs.push(req.body);
@@ -118,7 +118,7 @@ projectRouter.route('/:projectId/devs')
 * PROJECT -- ALL TASKS ROUTER
 */
 projectRouter.route('/:projectId/tasks')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .get(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -126,7 +126,7 @@ projectRouter.route('/:projectId/tasks')
                 res.json(project.tasks);
             })
     })
-    .post(authenticate.verifyUser, (req, res, next) => {
+    .post(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.push(req.body);
@@ -154,7 +154,7 @@ projectRouter.route('/:projectId/tasks')
  * PROJECT -- TASK.ID ROUTER
  */
 projectRouter.route('/:projectId/tasks/:taskId')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .get(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -166,7 +166,7 @@ projectRouter.route('/:projectId/tasks/:taskId')
         res.statusCode = 403;
         res.end('POST not supported by /:projectId/tasks/:taskId');
     })
-    .put(authenticate.verifyUser, (req, res, next) => {
+    .put(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 if (req.body.status) {
@@ -195,7 +195,7 @@ projectRouter.route('/:projectId/tasks/:taskId/dev')
                 res.json(project.tasks.id(req.params.taskId).dev)
             })
     })
-    .post(authenticate.verifyUser, (req, res, next) => {
+    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).dev.push(req.body);
@@ -231,7 +231,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
                 res.json(project.tasks.id(req.params.taskId).comments)
             })
     })
-    .post(authenticate.verifyUser, (req, res, next) => {
+    .post(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).comments.push(req.body);
@@ -268,7 +268,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
         res.statusCode = 403;
         res.end('POST not supported by /:projectId/tasks/:taskId/comments/:commentId');
     })
-    .put(authenticate.verifyUser, (req, res, next) => {
+    .put(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 if (req.body.comment) {
@@ -281,7 +281,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
                 res.json(project);
             })
     })
-    .delete(authenticate.verifyUser, (req, res, next) => {
+    .delete(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).comments.id(req.params.commentId).remove()

@@ -11,7 +11,7 @@ confirmationRouter.use(bodyParser.json());
 
 confirmationRouter.get('/:confirmationCode', function (req, res, next) {
     User.findOne({
-        codeConfirmation: req.params.confirmationCode
+        confirmationCode: req.params.confirmationCode
     })
         .then((user) => {
             user.verified = true;

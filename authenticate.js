@@ -20,9 +20,9 @@ var opts = {};
 opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = config.secretKey;
 
-exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done)=> {
-    User.findOne({_id: jwt_payload._id}, (err,user) => {
-        if(err){
+exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
+    User.findOne({ _id: jwt_payload._id }, (err, user) => {
+        if (err) {
             return done(err, false);
         } else if (user) {
             return done(null, user);
@@ -32,7 +32,49 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done)=> {
     });
 }));
 
-exports.verifyUser = passport.authenticate('jwt', {session: false});
+exports.verifyUser = passport.authenticate('jwt', { session: false });
+
+exports.verifyManager = (req, res, next) => {
+    User.findOne({ userId: req.user._id })
+        .then((user) => {
+            if (user.role === 'manager')
+                next();
+            else {
+                err = new Error('You are not a Manager to perform this operation!');
+                err.status = 403;
+                return next(err);
+            }
+        }, (err) => next(err))
+        .catch((err) => next(err))
+};
+
+exports.verifyDeveloper = (req, res, next) => {
+    User.findOne({ userId: req.user._id })
+        .then((user) => {
+            if (user.role === 'developer')
+                next();
+            else {
+                err = new Error('You are not a Developer to perform this operation!');
+                err.status = 403;
+                return next(err);
+            }
+        }, (err) => next(err))
+        .catch((err) => next(err))
+};
+
+exports.verifyBothRoles = (req, res, next) => {
+    User.findOne({ userId: req.user._id })
+        .then((user) => {
+            if (user.role === 'manager' || user.role === 'developer')
+                next();
+            else {
+                err = new Error('You are not a Dev or Manager to perform this operation!');
+                err.status = 403;
+                return next(err);
+            }
+        }, (err) => next(err))
+        .catch((err) => next(err))
+};
 
 const transport = nodemailer.createTransport({
     service: "Hotmail",
