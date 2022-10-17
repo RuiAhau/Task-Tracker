@@ -10,7 +10,8 @@ const projectSchema = new Schema({
         ref: 'User'
     },
     devs: {
-        type: [usersSchema.schema]
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'User'
     },
     tasks: {
         type: [taskSchema.schema]

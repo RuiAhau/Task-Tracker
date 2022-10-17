@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const { ObjectId } = require('mongodb')
+
 const authenticate = require('../authenticate');
 
 const Projects = require('../models/project');
@@ -14,20 +16,50 @@ projectRouter.use(bodyParser.json());
 */
 projectRouter.route('/')
     .get(authenticate.verifyUser, (req, res, next) => {
-        Projects.find({})
-            .populate('creator')
-            .then((project) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(project);
-            }, (err) => next(err))
-            .catch((err) => next(err));
+        if (req.user.role === 'manager') {
+            if (!req.body.createdBy) {
+                Projects.find({})
+                    .populate('creator')
+                    .populate('devs')
+                    .then((project) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(project);
+                    }, (err) => next(err))
+                    .catch((err) => next(err));
+            } else if (req.body.createdBy) {
+                Projects.find({ creator: req.user._id })
+                    .populate('creator')
+                    .populate('devs')
+                    .then((project) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(project);
+                    })
+            }
+        } else if (req.user.role === 'developer') {
+            if (!req.body.myTasks) {
+                Projects.find({ devs: req.user._id })
+                    .then((project) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(project)
+                    })
+            } else if (req.body.myTasks) {
+                console.log('entrei nas minhas tasks')
+                Projects.find({ tasks: { $elemMatch: { dev: req.user._id, status: "waiting" } } })
+                    .then((project) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(project)
+                    })
+            }
+        }
     })
     .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         req.body.creator = req.user._id;
         Projects.create(req.body)
             .then((project) => {
-                console.log(req.body.creator)
                 console.log('Project Created ', project);
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
@@ -116,6 +148,25 @@ projectRouter.route('/:projectId/devs')
         res.end('DELETE not supported by /:projectId/devs');
     });
 
+
+projectRouter.route('/:projectId/devs/:userId')
+    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                const userId = ObjectId(req.params.userId);
+                project.devs.push(userId);
+                project.save()
+                    .then((project) => {
+                        Projects.findById(project._id)
+                            .then((project) => {
+                                res.statusCode = 200;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.json(project);
+                            })
+                    }, (err) => next(err));
+            })
+    });
+
 /** 
 * PROJECT -- ALL TASKS ROUTER
 */
@@ -189,7 +240,7 @@ projectRouter.route('/:projectId/tasks/:taskId')
 /**
  * PROJECT -- TASK.ID -- ALL DEVS
  */
-projectRouter.route('/:projectId/tasks/:taskId/dev')
+projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
     .get(authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
@@ -201,7 +252,8 @@ projectRouter.route('/:projectId/tasks/:taskId/dev')
     .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
-                project.tasks.id(req.params.taskId).dev.push(req.body);
+                const userId = ObjectId(req.params.userId)
+                project.tasks.id(req.params.taskId).dev.push(userId);
                 project.save()
                     .then((project) => {
                         Projects.findById(project._id)

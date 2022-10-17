@@ -35,11 +35,11 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts, (jwt_payload, done) => 
 exports.verifyUser = passport.authenticate('jwt', { session: false });
 
 exports.verifyManager = (req, res, next) => {
-    User.findOne({ userId: req.user._id })
+    User.findOne({ _id: req.user._id })
         .then((user) => {
-            if (user.role === 'manager')
+            if (user.role === 'manager') {
                 next();
-            else {
+            } else {
                 err = new Error('You are not a Manager to perform this operation!');
                 err.status = 403;
                 return next(err);
@@ -49,7 +49,7 @@ exports.verifyManager = (req, res, next) => {
 };
 
 exports.verifyDeveloper = (req, res, next) => {
-    User.findOne({ userId: req.user._id })
+    User.findOne({ _id: req.user._id })
         .then((user) => {
             if (user.role === 'developer')
                 next();
@@ -63,7 +63,7 @@ exports.verifyDeveloper = (req, res, next) => {
 };
 
 exports.verifyBothRoles = (req, res, next) => {
-    User.findOne({ userId: req.user._id })
+    User.findOne({ _id: req.user._id })
         .then((user) => {
             if (user.role === 'manager' || user.role === 'developer')
                 next();
