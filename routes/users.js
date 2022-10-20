@@ -1,17 +1,21 @@
 var express = require('express');
-const bodyparser = require('body-parser')
+const bodyParser = require('body-parser')
+var User = require('../models/user');
 var passport = require('passport');
 var authenticate = require('../authenticate');
 
 const config = require('../config');
 
-var User = require('../models/user');
-
 var jwt = require('jsonwebtoken');
 
+var cors = require('./cors');
+
 var router = express.Router();
+router.use(bodyParser.json());
+
 /* GET users listing. */
-router.get('/', authenticate.verifyUser, authenticate.verifyManager, function (req, res, next) {
+router.options('*', cors.corsWithOptions, (req, res) => { res.sendStatus(200); });
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, function (req, res, next) {
   if (req.body.firstname && req.body.lastname) {
     User.find({ firstname: req.body.firstname, lastname: req.body.lastname, role: "developer" }).
       then((user) => {
@@ -62,16 +66,49 @@ router.post('/signup', (req, res, next) => {
     });
 });
 
-router.post('/login', passport.authenticate('local'), (req, res) => {
-  if (req.user.verified) {
-    var token = authenticate.getToken({ _id: req.user._id });
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.json({ success: true, token: token, status: 'You are successfully logged in!' });
-  } else {
-    res.json({ status: "You did not verify your account!" })
-  }
+router.post('/login', cors.corsWithOptions, (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err)
+      return next(err);
+
+    if (!user) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({ success: false, status: 'Login Unsuccessful!', err: info });
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({ success: false, status: 'Login Unsuccessful!', err: 'Could not log in!' });
+      }
+
+      if (req.user.verified) {
+        var token = authenticate.getToken({ _id: req.user._id });
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({ success: true, token: token, status: 'You are successfully logged in!' });
+      }
+    });
+  })(req, res, next);
 });
+
+router.get('/checkJWTToken', cors.corsWithOptions, (req, res) => {
+  passport.authenticate('jwt', { session: false }, (err, user, info) => {
+    if (err)
+      return next(err);
+
+    if (!user) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.json({ status: 'JWT invalid!', success: false, err: info });
+    } else {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      return res.json({ status: 'JWT valod!', success: true, user: user });
+    }
+  })(req, res);
+})
 
 
 module.exports = router;

@@ -5,6 +5,8 @@ const { ObjectId } = require('mongodb')
 
 const authenticate = require('../authenticate');
 
+const cors = require('./cors');
+
 const Projects = require('../models/project');
 
 const projectRouter = express.Router();
@@ -15,48 +17,21 @@ projectRouter.use(bodyParser.json());
 * ALL PROJECTS ROUTER
 */
 projectRouter.route('/')
-    .get(authenticate.verifyUser, (req, res, next) => {
-        if (req.user.role === 'manager') {
-            if (!req.body.createdBy) {
-                Projects.find({})
-                    .populate('creator')
-                    .populate('devs')
-                    .then((project) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(project);
-                    }, (err) => next(err))
-                    .catch((err) => next(err));
-            } else if (req.body.createdBy) {
-                Projects.find({ creator: req.user._id })
-                    .populate('creator')
-                    .populate('devs')
-                    .then((project) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(project);
-                    })
-            }
-        } else if (req.user.role === 'developer') {
-            if (!req.body.myTasks) {
-                Projects.find({ devs: req.user._id })
-                    .then((project) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(project)
-                    })
-            } else if (req.body.myTasks) {
-                console.log('entrei nas minhas tasks')
-                Projects.find({ tasks: { $elemMatch: { dev: req.user._id, status: "waiting" } } })
-                    .then((project) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(project)
-                    })
-            }
-        }
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
+        Projects.find(req.query)
+            .populate('creator')
+            .populate('devs')
+            .populate('tasks.dev')
+            .then((project) => {
+                console.log('Tou no server')
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project);
+            }, (err) => next(err))
+            .catch((err) => next(err));
     })
-    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         req.body.creator = req.user._id;
         Projects.create(req.body)
             .then((project) => {
@@ -67,11 +42,11 @@ projectRouter.route('/')
             }, (err) => next(err))
             .catch((err) => next(err));
     })
-    .put((req, res, next) => {
+    .put(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('PUT operation not supported on /projects');
     })
-    .delete(authenticate.verifyUser, (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
         Projects.remove({})
             .then((resp) => {
                 res.statusCode = 200;
@@ -85,7 +60,8 @@ projectRouter.route('/')
 * PROJECT ROUTER
 */
 projectRouter.route('/:projectId')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -94,15 +70,15 @@ projectRouter.route('/:projectId')
             }, (err) => next(err))
             .catch((err) => next(err));
     })
-    .post((req, res, next) => {
+    .post(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('POST not supported by /:projectId');
     })
-    .put((req, res, next) => {
+    .put(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('PUT not supported by /:projectId');
     })
-    .delete(authenticate.verifyUser, (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
         Projects.findByIdAndRemove(req.params.projectId)
             .then((resp) => {
                 res.statusCode = 200;
@@ -116,7 +92,8 @@ projectRouter.route('/:projectId')
 * PROJECT -- DEVS ROUTER
 */
 projectRouter.route('/:projectId/devs')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -124,7 +101,7 @@ projectRouter.route('/:projectId/devs')
                 res.json(project.devs);
             })
     })
-    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.devs.push(req.body);
@@ -139,18 +116,19 @@ projectRouter.route('/:projectId/devs')
                     }, (err) => next(err));
             })
     })
-    .put((req, res, next) => {
+    .put(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('PUT not supported by /:projectId/devs');
     })
-    .delete((req, res, next) => {
+    .delete(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('DELETE not supported by /:projectId/devs');
     });
 
 
 projectRouter.route('/:projectId/devs/:userId')
-    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 const userId = ObjectId(req.params.userId);
@@ -171,7 +149,8 @@ projectRouter.route('/:projectId/devs/:userId')
 * PROJECT -- ALL TASKS ROUTER
 */
 projectRouter.route('/:projectId/tasks')
-    .get(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -179,7 +158,7 @@ projectRouter.route('/:projectId/tasks')
                 res.json(project.tasks);
             })
     })
-    .post(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.push(req.body);
@@ -194,11 +173,11 @@ projectRouter.route('/:projectId/tasks')
                     }, (err) => next(err));
             })
     })
-    .put((req, res, next) => {
+    .put(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('PUT not supported by /:projectId/tasks');
     })
-    .delete((req, res, next) => {
+    .delete(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('DELETE not supported by /:projectId/tasks');
     });
@@ -207,7 +186,8 @@ projectRouter.route('/:projectId/tasks')
  * PROJECT -- TASK.ID ROUTER
  */
 projectRouter.route('/:projectId/tasks/:taskId')
-    .get(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .populate('tasks.comments.author')
             .then((project) => {
@@ -216,11 +196,11 @@ projectRouter.route('/:projectId/tasks/:taskId')
                 res.json(project.tasks.id(req.params.taskId))
             })
     })
-    .post((req, res, next) => {
+    .post(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('POST not supported by /:projectId/tasks/:taskId');
     })
-    .put(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 if (req.body.status) {
@@ -232,7 +212,7 @@ projectRouter.route('/:projectId/tasks/:taskId')
                 res.json(project);
             })
     })
-    .delete((req, res, next) => {
+    .delete(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('DELETE not supported by /:projectId/tasks/:taskId');
     });
@@ -241,7 +221,8 @@ projectRouter.route('/:projectId/tasks/:taskId')
  * PROJECT -- TASK.ID -- ALL DEVS
  */
 projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 res.statusCode = 200;
@@ -249,7 +230,7 @@ projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
                 res.json(project.tasks.id(req.params.taskId).dev)
             })
     })
-    .post(authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 const userId = ObjectId(req.params.userId)
@@ -265,11 +246,11 @@ projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
                     }, (err) => next(err));
             })
     })
-    .put((req, res, next) => {
+    .put(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('PUT not supported by /:projectId/tasks/:taskId/dev');
     })
-    .delete((req, res, next) => {
+    .delete(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('DELETE not supported by /:projectId/tasks/:taskId/dev');
     });
@@ -278,7 +259,8 @@ projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
  * PROJECT -- TASK.ID -- ALL COMMENTS
  */
 projectRouter.route('/:projectId/tasks/:taskId/comments')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .populate('tasks.comments.author')
             .then((project) => {
@@ -287,7 +269,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
                 res.json(project.tasks.id(req.params.taskId).comments)
             })
     })
-    .post(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 req.body.author = req.user._id;
@@ -300,11 +282,11 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
                     })
             })
     })
-    .put((req, res, next) => {
+    .put(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('PUT not supported by /:projectId/tasks/:taskId/comments');
     })
-    .delete((req, res, next) => {
+    .delete(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('DELETE not supported by /:projectId/tasks/:taskId/comments');
     });
@@ -313,7 +295,8 @@ projectRouter.route('/:projectId/tasks/:taskId/comments')
  * PROJECT -- TASK.ID -- COMMENT.ID
  */
 projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
-    .get(authenticate.verifyUser, (req, res, next) => {
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+    .get(cors.cors, authenticate.verifyUser, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .populate('tasks.comments.author')
             .then((project) => {
@@ -322,11 +305,11 @@ projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
                 res.json(project.tasks.id(req.params.taskId).comments.id(req.params.commentId));
             })
     })
-    .post((req, res, next) => {
+    .post(cors.corsWithOptions, (req, res, next) => {
         res.statusCode = 403;
         res.end('POST not supported by /:projectId/tasks/:taskId/comments/:commentId');
     })
-    .put(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 if (req.body.comment) {
@@ -339,7 +322,7 @@ projectRouter.route('/:projectId/tasks/:taskId/comments/:commentId')
                 res.json(project);
             })
     })
-    .delete(authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
+    .delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
                 project.tasks.id(req.params.taskId).comments.id(req.params.commentId).remove()
