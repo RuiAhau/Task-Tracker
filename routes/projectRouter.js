@@ -23,6 +23,7 @@ projectRouter.route('/')
             .populate('creator')
             .populate('devs')
             .populate('tasks.dev')
+            .populate('tasks.comments.author')
             .then((project) => {
                 console.log('Tou no server')
                 res.statusCode = 200;
@@ -131,6 +132,7 @@ projectRouter.route('/:projectId/devs/:userId')
     .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
+                console.log(req.params.userId)
                 const userId = ObjectId(req.params.userId);
                 project.devs.push(userId);
                 project.save()
@@ -161,9 +163,13 @@ projectRouter.route('/:projectId/tasks')
     .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
+                console.log('vou dar push nas tasks')
+                console.log(req.body)
                 project.tasks.push(req.body);
+
                 project.save()
                     .then((project) => {
+                        console.log('dei save e vou responder para tras')
                         Projects.findById(project._id)
                             .then((project) => {
                                 res.statusCode = 200;

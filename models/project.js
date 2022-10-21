@@ -5,6 +5,10 @@ const usersSchema = require('./user');
 const taskSchema = require('./task');
 
 const projectSchema = new Schema({
+    projectName: {
+        type: String,
+        required: true
+    },
     creator: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

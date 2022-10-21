@@ -15,6 +15,10 @@ const commentSchema = new Schema({
 });
 
 const taskSchema = new Schema({
+    taskName: {
+        type: String,
+        required: true
+    },
     status: {
         type: String,
         enum: ['waiting', 'implementation', 'verifying', 'releasing'],
