@@ -25,10 +25,8 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
       }, (err) => next(err))
       .catch((err) => next(err));
   } else {
-    console.log('boas vindo dos users')
     User.find({})
       .then((user) => {
-        console.log('boas vindo da resposta dos users')
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(user);

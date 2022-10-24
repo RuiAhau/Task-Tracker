@@ -239,7 +239,7 @@ projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
     .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
-                if (project.devs.includes(req.params.userId)) {
+                if (project.devs.includes(req.params.userId) && !project.tasks.id(req.params.taskId).dev.includes(req.params.userId)) {
                     const userId = ObjectId(req.params.userId)
                     project.tasks.id(req.params.taskId).dev.push(userId);
                     project.save()
