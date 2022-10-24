@@ -132,18 +132,22 @@ projectRouter.route('/:projectId/devs/:userId')
     .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
-                console.log(req.params.userId)
-                const userId = ObjectId(req.params.userId);
-                project.devs.push(userId);
-                project.save()
-                    .then((project) => {
-                        Projects.findById(project._id)
-                            .then((project) => {
-                                res.statusCode = 200;
-                                res.setHeader('Content-Type', 'application/json');
-                                res.json(project);
-                            })
-                    }, (err) => next(err));
+                if (!project.devs.includes(req.params.userId)) {
+                    const userId = ObjectId(req.params.userId);
+                    project.devs.push(userId);
+                    project.save()
+                        .then((project) => {
+                            Projects.findById(project._id)
+                                .then((project) => {
+                                    res.statusCode = 200;
+                                    res.setHeader('Content-Type', 'application/json');
+                                    res.json(project);
+                                })
+                        }, (err) => next(err));
+                } else {
+                    err = new Error('User already added to the project!')
+                    return next(err);
+                }
             })
     });
 
@@ -163,13 +167,9 @@ projectRouter.route('/:projectId/tasks')
     .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyBothRoles, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
-                console.log('vou dar push nas tasks')
-                console.log(req.body)
                 project.tasks.push(req.body);
-
                 project.save()
                     .then((project) => {
-                        console.log('dei save e vou responder para tras')
                         Projects.findById(project._id)
                             .then((project) => {
                                 res.statusCode = 200;
@@ -239,17 +239,24 @@ projectRouter.route('/:projectId/tasks/:taskId/dev/:userId')
     .post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyManager, (req, res, next) => {
         Projects.findById(req.params.projectId)
             .then((project) => {
-                const userId = ObjectId(req.params.userId)
-                project.tasks.id(req.params.taskId).dev.push(userId);
-                project.save()
-                    .then((project) => {
-                        Projects.findById(project._id)
-                            .then((project) => {
-                                res.statusCode = 200;
-                                res.setHeader('Content-Type', 'application/json');
-                                res.json(project);
-                            })
-                    }, (err) => next(err));
+                if (project.devs.includes(req.params.userId)) {
+                    const userId = ObjectId(req.params.userId)
+                    project.tasks.id(req.params.taskId).dev.push(userId);
+                    project.save()
+                        .then((project) => {
+                            Projects.findById(project._id)
+                                .then((project) => {
+                                    res.statusCode = 200;
+                                    res.setHeader('Content-Type', 'application/json');
+                                    res.json(project);
+                                })
+                        }, (err) => next(err));
+                } else {
+                    error = new Error('Developer is not associated with project!')
+                    return next(error);
+                }
+
+
             })
     })
     .put(cors.corsWithOptions, (req, res, next) => {
