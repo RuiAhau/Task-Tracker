@@ -25,7 +25,6 @@ projectRouter.route('/')
             .populate('tasks.dev')
             .populate('tasks.comments.author')
             .then((project) => {
-                console.log('Tou no server')
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.json(project);
