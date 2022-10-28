@@ -30,7 +30,11 @@ const taskSchema = new Schema({
         ref: 'User'
     },
     comments: [commentSchema]
-});
+},
+    {
+        timestamps: true
+    }
+);
 
 var Tasks = mongoose.model('Task', taskSchema);
 var Comments = mongoose.model('Comment', commentSchema);
