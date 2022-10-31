@@ -29,6 +29,11 @@ const taskSchema = new Schema({
         type: [mongoose.Schema.Types.ObjectId],
         ref: 'User'
     },
+    progress: {
+        type: mongoose.Schema.Types.Decimal128,
+        default: 0.0,
+        required: true
+    },
     comments: [commentSchema]
 },
     {
