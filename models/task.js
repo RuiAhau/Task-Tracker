@@ -12,7 +12,10 @@ const commentSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }
-});
+},
+    {
+        timestamps: true
+    });
 
 const taskSchema = new Schema({
     taskName: {
@@ -32,6 +35,11 @@ const taskSchema = new Schema({
     progress: {
         type: mongoose.Schema.Types.Decimal128,
         default: 0.0,
+        required: true
+    },
+    description: {
+        type: String,
+        default: '',
         required: true
     },
     comments: [commentSchema]
