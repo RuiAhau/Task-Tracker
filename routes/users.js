@@ -35,7 +35,7 @@ router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.veri
   }
 });
 
-router.post('/signup', (req, res, next) => {
+router.post('/signup', cors.corsWithOptions, (req, res, next) => {
   const token = jwt.sign(req.body.username, config.secretKey);
   User.register(new User({ username: req.body.username, confirmationCode: token }),
     req.body.password, (err, user) => {
