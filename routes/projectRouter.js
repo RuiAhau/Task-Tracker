@@ -218,8 +218,14 @@ projectRouter.route('/:projectId/tasks/:taskId')
             })
     })
     .delete(cors.corsWithOptions, (req, res, next) => {
-        res.statusCode = 403;
-        res.end('DELETE not supported by /:projectId/tasks/:taskId');
+        Projects.findById(req.params.projectId)
+            .then((project) => {
+                project.tasks.id(req.params.taskId).remove()
+                project.save()
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(project);
+            })
     });
 
 /**
